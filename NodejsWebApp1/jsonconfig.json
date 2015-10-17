@@ -1,0 +1,7 @@
+﻿{
+    contents: {
+        "compilerOptions": {
+            "target": "ES6"
+        }
+    }
+}
