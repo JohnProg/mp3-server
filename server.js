@@ -104,7 +104,7 @@ function upTime() {
 
 // Auto ping app.
 setInterval(function () {
-    http.get("http://lichwa-mp3.herokuapp.com/status", function (result) {
+    https.get("https://lichwa-mp3.herokuapp.com/status", function (result) {
         try {
             console.log(result.headers);
         }
@@ -114,7 +114,7 @@ setInterval(function () {
     });
 }, autoPingInterval);
 
-http.createServer(function (request, response) {
+https.createServer(function (request, response) {
     try {
         console.log(request.url);
         var request = url.parse(request.url, true);
