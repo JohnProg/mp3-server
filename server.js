@@ -114,7 +114,7 @@ setInterval(function () {
     });
 }, autoPingInterval);
 
-https.createServer(function (request, response) {
+http.createServer(function (request, response) {
     try {
         console.log(request.url);
         var request = url.parse(request.url, true);
