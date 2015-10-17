@@ -1,0 +1,33 @@
+{
+  "name": "mp3-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "engines": {
+	  "node": "4.2.1"
+  },
+  "dependencies": {
+    "async": "^1.4.2",
+    "domutils": "^1.4.3",
+    "youtube-mp3-downloader": "^0.3.5",
+    "fluent-ffmpeg": "^2.0.1",
+    "ytdl-core": "^0.6.1",
+    "fs": "^0.0.2",
+    "q": "^1.4.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lichwa/mp3-server.git"
+  },
+  "author": "Lichwa",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lichwa/mp3-server/issues"
+  },
+  "homepage": "https://github.com/Lichwa/mp3-server#readme"
+}
