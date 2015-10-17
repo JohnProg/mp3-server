@@ -12,7 +12,7 @@ ytdl = require('ytdl-core');
 
 const ytApiKey = "AIzaSyBhtvRxAa5jePf6x0BRQCK-BBZ5-mhGwss";
 const ytApiUrl = "https://www.googleapis.com/youtube/v3";
-const serverIp = "127.0.0.1";
+const serverIp = "0.0.0.0";
 const serverPort = process.env.PORT || 8080;
 const mp3DirSpaceLimit = 75 * 1000 * 1000;
 const autoPingInterval = 15 * 60 * 1000;
