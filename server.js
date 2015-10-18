@@ -1,13 +1,16 @@
 ﻿"use strict";
+/// <reference path="typings/tsd.d.ts" />
 
-var http = require('http');
-var https = require('https');
-var YoutubeMp3Downloader = require('youtube-mp3-downloader');
-let fs = require('fs'),
+let express = require('express'),
+http = require('http'),
+https = require('https'),
+os = require('os'),
+fs = require('fs'),
 path = require('path'),
 url = require('url'),
 events = require('events'),
 async = require('async'),
+YoutubeMp3Downloader = require('youtube-mp3-downloader'),
 ytdl = require('ytdl-core');
 
 const ytApiKey = "AIzaSyBhtvRxAa5jePf6x0BRQCK-BBZ5-mhGwss";
@@ -16,15 +19,13 @@ const serverIp = "0.0.0.0";
 const serverPort = process.env.PORT || 8080;
 const mp3DirSpaceLimit = 75 * 1000 * 1000;
 const autoPingInterval = 15 * 60 * 1000;
-console.log("Starting server...");
 
-var Video = function (videoId) {
+function Video (videoId) {
     this.id = videoId;
     this.size = 0;
     this.isDownloaded = false;
     this.onDownloadCallbacks = [];
-    //Configure YoutubeMp3Downloader.
-    var yt2mp3;
+    this.yt2mp3;
 };
 Video.prototype.getInfo = function (callback) {
     var video = this;
@@ -49,14 +50,18 @@ Video.prototype.getInfo = function (callback) {
 };
 Video.prototype.download = function () {
     var video = this;
+    //Configure YoutubeMp3Downloader.
     if (typeof video.yt2mp3 == 'undefined') {
         video.yt2mp3 = new YoutubeMp3Downloader({
-            "ffmpegPath": __dirname + "/ffmpeg/bin/ffmpeg.exe",             // Where is the FFmpeg binary located? 
+            "ffmpegPath": __dirname + "/ffmpeg/bin/" + (os.platform() == 'win32' ? "ffmpeg.exe" : "ffmpeg"),             // Where is the FFmpeg binary located? 
             "outputPath": __dirname + "/mp3",                               // Where should the downloaded and encoded files be stored? 
             "youtubeVideoQuality": "highest",                               // What video quality should be used? 
             "queueParallelism": 4,                                         // How many parallel downloads/encodes should be started? 
             "progressTimeout": 4000                                         // How long should be the interval of the progress reports 
         });
+    }
+    if (typeof video.onDownloadCallbacks == 'undefined') {
+        video.onDownloadCallbacks = [];
     }
     this.getInfo(function (err, videoInfo) {
         if (err) {
@@ -92,7 +97,15 @@ var videos = [];
 // Clear /mp3 dir.
 console.log("Removing '/mp3' directory ...");
 removeDir(__dirname + "/mp3", function (err) {
-    fs.mkdir(__dirname + "/mp3");
+    if (err) {
+        console.log("Error removing '/mp3': " + err);
+    }
+    else {
+        fs.mkdir(__dirname + "/mp3", function(err) {
+            if (err)
+                console.log("Error creating '/mp3': " + err);
+        });
+    }
 });
 
 
@@ -105,242 +118,234 @@ function upTime() {
 // Auto ping app.
 setInterval(function () {
     https.get("https://lichwa-mp3.herokuapp.com/status", function (result) {
-        try {
-            console.log(result.headers);
-        }
-        catch (e) {
-            console.log(e);
-        }
+        var resultBody = '';
+        result.on('data', function(dataChunk) {
+           resultBody += dataChunk; 
+        });
+        result.on('end', function() {
+           console.log(resultBody); 
+        });
+    }).on('error', function(err) {
+        console.log("Auto pinger error: " + err);
     });
 }, autoPingInterval);
 
-http.createServer(function (request, response) {
-    try {
-        console.log(request.url);
-        var request = url.parse(request.url, true);
-        var action = request.pathname;
-        
-        if (action == '/status') {
-            (function () {
-                var status = {
-                    upTime: upTime()
-                };
-                response.writeHead(200, { 'Content-Type': 'application/json' });
-                response.end(JSON.stringify(status));
-            })();
-        }
-        else if (action == '/search') {
-            (function () {
-                if (!request.query.q) {
-                    response.writeHead(403, { 'Content-Type': 'text/plain' });
-                    response.end('Niepodano ');
-                }
-                else {
-                    var q = request.query.q.replace(' ', '%20');
-                    var requestUrl = ytApiUrl + "/search?part=snippet" 
-                     + "&q=" + q 
-                     + "&type=video" 
-                     + "&maxResults=3" 
-                     + "&order=relevance" 
-                     + "&key=" + ytApiKey
-                    https.get(requestUrl, function (searchResponse) {
-                        var data = "";
-                        searchResponse.on('data', function (dataChunk) {
-                            data += dataChunk;
-                        });
-                        searchResponse.on('end', function () {
-                            response.writeHead(200, { 'Content-Type': 'application/json' });
-                            response.end(JSON.stringify(data));
-                        });
-                    }).on('error', function (err) {
-                        console.log(err);
-                    });
-                }
-            })();
-        }
-        else if (action == '/convert') {
-            (function () {
-                // No video id in query.
-                if (!request.query.v) {
-                    response.writeHead(403, { 'Content-Type': 'text/plain' });
-                    response.end('Niepodano numeru id');
-                }
-                else {
-                    var videoId = request.query.v;
-                    var fileDir = __dirname + "/mp3/" + videoId;
-                    // Get fileName.
-                    fs.readdir(fileDir, function (err, files) {
-                        // No specified dir with video (video wasn't downloaded yet).
-                        if (err) {
-                            // Create dir.
-                            fs.mkdir(__dirname + "/mp3/" + videoId, function (err) {
+var app = express();
+app.get('/status', function(request, response) {
+    var status = {
+        upTime: upTime()
+    };
+    response.status(200).json(JSON.stringify(status));
+});
+app.get('/search', function(request, response) {
+    if (!request.query.q) {
+        response.set('Content-Type', 'text/plain');
+        response.status(403).send('No query specified');
+    }
+    else {
+        var q = request.query.q.replace(' ', '%20');
+        var requestUrl = ytApiUrl + "/search?part=snippet" 
+            + "&q=" + q 
+            + "&type=video" 
+            + "&maxResults=3" 
+            + "&order=relevance" 
+            + "&key=" + ytApiKey
+        https.get(requestUrl, function (searchResponse) {
+            var data = "";
+            searchResponse.on('data', function (dataChunk) {
+                data += dataChunk;
+            });
+            searchResponse.on('end', function () {
+                response.set('Content-Type', 'application/json');
+                response.status(200).send(JSON.stringify(data));
+            });
+        }).on('error', function (err) {
+            console.log("Youtube search query error: " + err);
+        });
+    } 
+});
+app.get('/convert', function(request, response) {
+    // No video id in query.
+    if (!request.query.v) {
+        response.set('Content-Type', 'text/plain');
+        response.status(403).send('No video id specified');
+    }
+    else {
+        var videoId = request.query.v;
+        var fileDir = __dirname + "/mp3/" + videoId;
+        // Get fileName.
+        fs.readdir(fileDir, function (err, files) {
+            // No specified dir with video (video wasn't downloaded yet).
+            if (err) {
+                // Create dir.
+                fs.mkdir(fileDir, function (err) {
+                    if (err) {
+                        console.log("Error creating '" + fileDir + "': " + err);
+                    }
+                    else {
+                        // Check if have free space.
+                        var totalSize = 0;
+                        for (var i = 0; i < videos.length; i++) {
+                            totalSize += videos[i].size;
+                        }
+                        // Remove oldest video if no free space.
+                        if (totalSize > 0 && totalSize > mp3DirSpaceLimit) {
+                            var oldestVideo = videos[0];
+                            removeDir(__dirname + "/mp3/" + oldestVideo.id, function (err) {
                                 if (err) {
-                                    console.log(err);
+                                    console.log("Error removing oldest video '" + __dirname + "/mp3/" + oldestVideo.id + "': " + err);
                                 }
                                 else {
-                                    // Check if have free space.
-                                    var totalSize = 0;
-                                    for (var i = 0; i < videos.length; i++) {
-                                        totalSize += videos[i].size;
-                                    }
-                                    // Remove oldest video if no free space.
-                                    if (totalSize > 0 && totalSize > mp3DirSpaceLimit) {
-                                        var oldestVideo = videos[0];
-                                        removeDir(__dirname + "/mp3/" + oldestVideo.id, function (err) {
-                                            if (err) {
-                                                console.log(err);
-                                            }
-                                            else {
-                                                console.log("Videos: " + videos.length);
-                                                videos.splice(0, 1);
-                                                console.log("Removed old video '" + oldestVideo.id + "'. Free space: " + (totalSize - oldestVideo.size) + "/" + mp3DirSpaceLimit);
-                                                console.log("Videos: " + videos.length);
-                                            }
-                                        });
-                                    }
-                                    
-                                    // Download video.
-                                    var video = new Video(videoId);
-                                    videos.push(video);
-                                    video.download(videoId);
-                                    video.onDownloadCallbacks.push(function (err, data) {
-                                        if (err) {
-                                            console.log(err);
-                                        }
-                                        else {
-                                            fs.readdir(fileDir, function (err, files) {
-                                                // Get fileStats.
-                                                if (err)
-                                                    console.log(err);
-                                                var fileName = files[0];
-                                                var filePath = fileDir + "/" + fileName;
-                                                fs.stat(filePath, function (err, fileStats) {
-                                                    if (err) {
-                                                        console.log(err);
-                                                    }
-                                                    else {
-                                                        var fileSize = fileStats.size;
-                                                        response.writeHead(200, { 'Content-Type': 'application/json' });
-                                                        var mp3Info = {
-                                                            fileName: fileName,
-                                                            fileSize: fileSize,
-                                                            downloadLink: '/download?v=' + videoId
-                                                        };
-                                                        response.end(JSON.stringify(mp3Info));
-                                                    }
-                                                });
-                                            });
-                                        }
-                                    });
+                                    videos.splice(0, 1);
+                                    console.log("Removed old video '" + oldestVideo.id + "'. Free space: " + (totalSize - oldestVideo.size) + "/" + mp3DirSpaceLimit);
                                 }
                             });
                         }
-                        else {
-                            // Video already exists.
-                            var video;
-                            for (var i = 0; i < videos.length; i++) {
-                                if (videos[i].id == videoId) {
-                                    video = videos[i];
-                                    break;
-                                }
+                        
+                        // Download video.
+                        var video = new Video(videoId);
+                        videos.push(video);
+                        video.download(videoId);
+                        video.onDownloadCallbacks.push(function (err, data) {
+                            if (err) {
+                                console.log("On download callback error: " + err);
                             }
-                            // FInished downloading.
-                            if (video.isDownloaded == true) {
-                                var fileName = files[0];
-                                var filePath = fileDir + "/" + fileName;
-                                fs.stat(filePath, function (err, fileStats) {
+                            else {
+                                fs.readdir(fileDir, function (err, files) {
+                                    // Get fileStats.
                                     if (err) {
-                                        console.log(err);
+                                        console.log("Error reading '" + fileDir + "': " + err);
                                     }
                                     else {
-                                        var fileSize = fileStats.size;
-                                        response.writeHead(200, { 'Content-Type': 'application/json' });
-                                        var mp3Info = {
-                                            fileName: fileName,
-                                            fileSize: fileSize,
-                                            downloadLink: '/download?v=' + videoId
-                                        };
-                                        response.end(JSON.stringify(mp3Info));
-                                    }
-                                });
-                            }
-                        // Still downloading, add onDownload callback.
-                            else {
-                                video.onDownloadCallbacks.push(function (err, data) {
-                                    //console.log(files[0]);
                                     var fileName = files[0];
                                     var filePath = fileDir + "/" + fileName;
                                     fs.stat(filePath, function (err, fileStats) {
                                         if (err) {
-                                            console.log(err);
+                                            console.log("Error reading '" + filePath + "': " + err);
                                         }
                                         else {
                                             var fileSize = fileStats.size;
-                                            response.writeHead(200, { 'Content-Type': 'application/json' });
+                                            response.set('Content-Type', 'application/json');
                                             var mp3Info = {
                                                 fileName: fileName,
                                                 fileSize: fileSize,
                                                 downloadLink: '/download?v=' + videoId
                                             };
-                                            response.end(JSON.stringify(mp3Info));
+                                            response.status(200).send(JSON.stringify(mp3Info));
                                         }
                                     });
+                                    }
                                 });
                             }
-                        }
-                    });
+                        });
+                    }
+                });
+            }
+            else {
+                // Video already exists.
+                var video;
+                for (var i = 0; i < videos.length; i++) {
+                    if (videos[i].id == videoId) {
+                        video = videos[i];
+                        break;
+                    }
                 }
-            })();
-        }
-        else if (action == '/download') {
-            (function () {
-                // No video id in query.
-                if (!request.query.v) {
-                    response.writeHead(403, { 'Content-Type': 'text/plain' });
-                    response.end('Niepodano numeru id');
-                }
-                else {
-                    var videoId = request.query.v;
-                    var fileDir = __dirname + "/mp3/" + videoId;
-                    // Get fileName.
-                    fs.readdir(fileDir, function (err, files) {
+                // FInished downloading.
+                if (video.isDownloaded == true) {
+                    var fileName = files[0];
+                    var filePath = fileDir + "/" + fileName;
+                    fs.stat(filePath, function (err, fileStats) {
                         if (err) {
-                            console.log(err);
+                            console.log("Error reading '" + filePath + "': " + err);
                         }
                         else {
-                            // Get fileStats.
-                            var fileName = files[0];
-                            var filePath = fileDir + "/" + fileName;
-                            fs.stat(filePath, function (error, fileStats) {
-                                if (err) {
-                                    console.log(err);
-                                }
-                                else {
-                                    var fileSize = fileStats.size;
-                                    var filePath = fileDir + "/" + fileName;
-                                    response.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': fileSize, 'Content-Disposition': 'attachment; filename="' + fileName + '"' });
-                                    var readStream = fs.createReadStream(filePath);
-                                    readStream.pipe(response);
-                                    readStream.on("close", function () {
-
-                                    });
-                                }
-                            });
+                            var fileSize = fileStats.size;
+                            response.set('Content-Type', 'application/json');
+                            var mp3Info = {
+                                fileName: fileName,
+                                fileSize: fileSize,
+                                downloadLink: '/download?v=' + videoId
+                            };
+                            response.status(200).send(JSON.stringify(mp3Info));
                         }
                     });
                 }
-            })();
-        }
-        else {
-            response.writeHead(404, { 'Content-Type': 'text/plain' });
-            response.end('404');
-        }
+            // Still downloading, add onDownload callback.
+                else {
+                    video.onDownloadCallbacks.push(function (err, data) {
+                        //console.log(files[0]);
+                        var fileName = files[0];
+                        var filePath = fileDir + "/" + fileName;
+                        fs.stat(filePath, function (err, fileStats) {
+                            if (err) {
+                                console.log("Error reading '" + filePath + "': " + err);
+                            }
+                            else {
+                                var fileSize = fileStats.size;
+                                response.set('Content-Type', 'application/json');
+                                var mp3Info = {
+                                    fileName: fileName,
+                                    fileSize: fileSize,
+                                    downloadLink: '/download?v=' + videoId
+                                };
+                                response.status(200).send(JSON.stringify(mp3Info));
+                            }
+                        });
+                    });
+                }
+            }
+        });
     }
-        catch (e) {
-        console.log(e);
+});
+
+app.get('/download', function(request, response) {
+    // No video id in query.
+    if (!request.query.v) {
+        response.set('Content-Type', 'text/plain');
+        response.status(403).send('No video id specified');
     }
-}).listen(serverPort, serverIp);
-console.log("Server is running on " + serverIp + ":" + serverPort);
+    else {
+        var videoId = request.query.v;
+        var fileDir = __dirname + "/mp3/" + videoId;
+        // Get fileName.
+        fs.readdir(fileDir, function (err, files) {
+            if (err) {
+                console.log("Error reading '" + fileDir + "': " + err);
+            }
+            else {
+                // Get fileStats.
+                var fileName = files[0];
+                var filePath = fileDir + "/" + fileName;
+                fs.stat(filePath, function (error, fileStats) {
+                    if (err) {
+                            console.log("Error reading '" + filePath + "': " + err);
+                    }
+                    else {
+                        var fileSize = fileStats.size;
+                        var filePath = fileDir + "/" + fileName;
+                        response.set('Content-Type', 'audio/mpeg');
+                        response.set('Content-Length', fileSize.toString());
+                        response.set('Content-Disposition', 'attachment; filename="' + fileName + '"');
+                        response.status(200);
+                        var readStream = fs.createReadStream(filePath);
+                        readStream.pipe(response);
+                        readStream.on("close", function () {
+
+                        });
+                    }
+                });
+            }
+        });
+    } 
+});
+
+console.log("Starting server...");
+var server = app.listen(serverPort, function() {
+   var host = server.address().address;
+   var post = server.address().port;
+   
+   console.log("Server is running on " + host + ":" + post);
+});
 
 // Remove dir recursively.
 function removeDir(location, next) {
