@@ -4,6 +4,7 @@
 let express = require('express'),
 http = require('http'),
 https = require('https'),
+os = require('os'),
 fs = require('fs'),
 path = require('path'),
 url = require('url'),
@@ -52,7 +53,7 @@ Video.prototype.download = function () {
     //Configure YoutubeMp3Downloader.
     if (typeof video.yt2mp3 == 'undefined') {
         video.yt2mp3 = new YoutubeMp3Downloader({
-            "ffmpegPath": __dirname + "/ffmpeg/bin/ffmpeg.exe",             // Where is the FFmpeg binary located? 
+            "ffmpegPath": __dirname + "/ffmpeg/bin/" + (os.platform() == 'win32' ? "ffmpeg.exe" : "ffmpeg"),             // Where is the FFmpeg binary located? 
             "outputPath": __dirname + "/mp3",                               // Where should the downloaded and encoded files be stored? 
             "youtubeVideoQuality": "highest",                               // What video quality should be used? 
             "queueParallelism": 4,                                         // How many parallel downloads/encodes should be started? 
