@@ -140,6 +140,7 @@ app.get('/status', function(request, response) {
 app.get('/search', function(request, response) {
     if (!request.query.q) {
         response.set('Content-Type', 'text/plain');
+		response.set('Access-Control-Allow-Origin', "*");
         response.status(403).send('No query specified');
     }
     else {
@@ -157,6 +158,7 @@ app.get('/search', function(request, response) {
             });
             searchResponse.on('end', function () {
                 response.set('Content-Type', 'application/json');
+				response.set('Access-Control-Allow-Origin', "*");
                 response.status(200).send(JSON.stringify(data));
             });
         }).on('error', function (err) {
@@ -168,6 +170,7 @@ app.get('/convert', function(request, response) {
     // No video id in query.
     if (!request.query.v) {
         response.set('Content-Type', 'text/plain');
+		response.set('Access-Control-Allow-Origin', "*");
         response.status(403).send('No video id specified');
     }
     else {
@@ -231,6 +234,7 @@ app.get('/convert', function(request, response) {
                                                 fileSize: fileSize,
                                                 downloadLink: '/download?v=' + videoId
                                             };
+											response.set('Access-Control-Allow-Origin', "*");
                                             response.status(200).send(JSON.stringify(mp3Info));
                                         }
                                     });
@@ -259,7 +263,8 @@ app.get('/convert', function(request, response) {
                             console.log("Error reading '" + filePath + "': " + err);
                         }
                         else {
-                            var fileSize = fileStats.size;
+							var fileSize = fileStats.size;
+							response.set('Access-Control-Allow-Origin', "*");
                             response.set('Content-Type', 'application/json');
                             var mp3Info = {
                                 fileName: fileName,
@@ -282,6 +287,7 @@ app.get('/convert', function(request, response) {
                             }
                             else {
                                 var fileSize = fileStats.size;
+								response.set('Access-Control-Allow-Origin', "*");	
                                 response.set('Content-Type', 'application/json');
                                 var mp3Info = {
                                     fileName: fileName,
@@ -302,6 +308,7 @@ app.get('/download', function(request, response) {
     // No video id in query.
     if (!request.query.v) {
         response.set('Content-Type', 'text/plain');
+		response.set('Access-Control-Allow-Origin', "*");
         response.status(403).send('No video id specified');
     }
     else {
@@ -326,6 +333,7 @@ app.get('/download', function(request, response) {
                         response.set('Content-Type', 'audio/mpeg');
                         response.set('Content-Length', fileSize.toString());
                         response.set('Content-Disposition', 'attachment; filename="' + fileName + '"');
+						response.set('Access-Control-Allow-Origin', "*");
                         response.status(200);
                         var readStream = fs.createReadStream(filePath);
                         readStream.pipe(response);
