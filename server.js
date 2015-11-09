@@ -22,13 +22,14 @@ const autoPingInterval = 15 * 60 * 1000;    // 15 minutes
 var videos = [];
 
 // Clear /mp3 dir.
-console.log("Removing '/mp3' directory ...");
-var rm = spawn('rm', ['-rf', '/mp3/*']);
+console.log("Clearing out './mp3' directory ...");
+// TODO: require('path')
+var rm = spawn('rm', ['-rf', __dirname + '/mp3']);
 rm.on('close', function(code) {
     console.log("Exit code: " + code);
     fs.mkdir(__dirname + "/mp3", function(err) {
         if (err)
-            console.log("Error creating '/mp3': " + err);
+            console.log("Error creating " + __dirname + "'/mp3': " + err);
     });
 });
 
