@@ -25,7 +25,6 @@ console.log("Removing '/mp3' directory ...");
 removeDir(__dirname + "/mp3", function (err) {
     if (err) {
         console.log("Error removing '/mp3': " + err);
-        return;
     }
     fs.mkdir(__dirname + "/mp3", function(err) {
         if (err)
