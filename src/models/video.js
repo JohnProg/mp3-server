@@ -14,6 +14,9 @@ let http = require('http'),
     ytmp3 = require('youtube-mp3-downloader'),
     ytdl = require('ytdl-core');
 
+const ytApiKey = "AIzaSyBhtvRxAa5jePf6x0BRQCK-BBZ5-mhGwss";
+const ytApiUrl = "https://www.googleapis.com/youtube/v3";
+
 class Video {
     constructor(videoId) {
         this.id = videoId;

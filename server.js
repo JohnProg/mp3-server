@@ -9,6 +9,7 @@ path = require('path'),
 url = require('url'),
 events = require('events'),
 async = require('async'),
+spawn = require('child_process').spawn,
 ytdl = require('ytdl-core'),
 Video = require('./src/models/video.js');
 
@@ -22,16 +23,14 @@ var videos = [];
 
 // Clear /mp3 dir.
 console.log("Removing '/mp3' directory ...");
-removeDir(__dirname + "/mp3", function (err) {
-    if (err) {
-        console.log("Error removing '/mp3': " + err);
-    }
+var rm = spawn('rm', ['-rf', '/mp3/*']);
+rm.on('close', function(code) {
+    console.log("Exit code: " + code);
     fs.mkdir(__dirname + "/mp3", function(err) {
         if (err)
             console.log("Error creating '/mp3': " + err);
     });
 });
-
 
 // App upTime.
 var startTime = Date.now();
@@ -54,6 +53,7 @@ setInterval(function () {
     });
 }, autoPingInterval);
 
+// Routing.
 var app = express();
 app.get('/status', function(request, response) {
     var status = {
@@ -118,13 +118,11 @@ app.get('/convert', function(request, response) {
                     // Remove oldest video if no free space.
                     if (totalSize > 0 && totalSize > mp3DirSpaceLimit) {
                         var oldestVideo = videos[0];
-                        removeDir(__dirname + "/mp3/" + oldestVideo.id, function (err) {
-                            if (err) {
-                                console.log("Error removing oldest video '" + __dirname + "/mp3/" + oldestVideo.id + "': " + err);
-                                return;
-                            }
+
+                        var rm = spawn('rm', ['-rf', __dirname + "/mp3/" + oldestVideo.id]);
+                        rm.on('close', function(code) {
                             videos.splice(0, 1);
-                            console.log("Removed old video '" + oldestVideo.id + "'. Free space: " + (totalSize - oldestVideo.size) + "/" + mp3DirSpaceLimit);
+                            console.log("Removed old video '" + oldestVideo.id + "'\nExit code: " + code + "\nFree space: " + (totalSize - oldestVideo.size) + "/" + mp3DirSpaceLimit);
                         });
                     }
 
@@ -135,33 +133,32 @@ app.get('/convert', function(request, response) {
                     video.onDownloadCallbacks.push(function (err, data) {
                         if (err) {
                             console.log("On download callback error: " + err);
+                            return;
                         }
-                        else {
-                            fs.readdir(fileDir, function (err, files) {
-                                // Get fileStats.
+                        fs.readdir(fileDir, function (err, files) {
+                            // Get fileStats.
+                            if (err) {
+                                console.log("Error reading '" + fileDir + "': " + err);
+                                return;
+                            }
+                            var fileName = files[0];
+                            var filePath = fileDir + "/" + fileName;
+                            fs.stat(filePath, function (err, fileStats) {
                                 if (err) {
-                                    console.log("Error reading '" + fileDir + "': " + err);
+                                    console.log("Error reading '" + filePath + "': " + err);
                                     return;
                                 }
-                                var fileName = files[0];
-                                var filePath = fileDir + "/" + fileName;
-                                fs.stat(filePath, function (err, fileStats) {
-                                    if (err) {
-                                        console.log("Error reading '" + filePath + "': " + err);
-                                        return;
-                                    }
-                                    var fileSize = fileStats.size;
-                                    response.set('Content-Type', 'application/json');
-                                    var mp3Info = {
-                                        fileName: fileName,
-                                        fileSize: fileSize,
-                                        downloadLink: '/download?v=' + videoId
-                                    };
-                                    response.set('Access-Control-Allow-Origin', "*");
-                                    response.status(200).send(JSON.stringify(mp3Info));
-                                });
+                                var fileSize = fileStats.size;
+                                response.set('Content-Type', 'application/json');
+                                var mp3Info = {
+                                    fileName: fileName,
+                                    fileSize: fileSize,
+                                    downloadLink: '/download?v=' + videoId
+                                };
+                                response.set('Access-Control-Allow-Origin', "*");
+                                response.status(200).send(JSON.stringify(mp3Info));
                             });
-                        }
+                        });
                     });
                 });
             }
@@ -194,7 +191,7 @@ app.get('/convert', function(request, response) {
                         response.status(200).send(JSON.stringify(mp3Info));
                     });
                 }
-            // Still downloading, add onDownload callback.
+                // Still downloading, add onDownload callback.
                 else {
                     video.onDownloadCallbacks.push(function (err, data) {
                         if (err) {
@@ -271,36 +268,3 @@ var server = app.listen(serverPort, function() {
    
    console.log("Server is running on " + host + ":" + post);
 });
-
-// Remove dir recursively.
-function removeDir(location, next) {
-    if (typeof next == 'undefined') {
-        next = function () { };
-    }
-    fs.readdir(location, function (err, files) {
-        async.each(files, function (file, cb) {
-            file = location + '/' + file;
-            fs.stat(file, function (err, stat) {
-                if (err) {
-                    return cb(err);
-                }
-                if (stat.isDirectory()) {
-                    removeDir(file, cb);
-                } else {
-                    fs.unlink(file, function (err) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        return cb();
-                    })
-                }
-            })
-        }, function (err) {
-            if (err)
-                return next(err);
-            fs.rmdir(location, function (err) {
-                return next(err)
-            })
-        });
-    });
-}
