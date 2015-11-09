@@ -29,7 +29,7 @@ class Video {
         });
     };
 
-    getInfo = (callback) => {
+    getInfo (callback) {
         var requestUrl = ytApiUrl + "/videos?part=snippet"
             + "&id=" + this.id
             + "&fields=items(snippet(title))"
@@ -54,7 +54,7 @@ class Video {
         });
     };
 
-    download = () => {
+    download() {
         this.getInfo((err, videoInfo) => {
             if (err) {
                 console.log(err);
@@ -67,7 +67,7 @@ class Video {
             });
             this.yt2mp3.on('error', (err) => {
                 console.log(err);
-                this.onDownloadCallbacks.forEach(function (callback) {
+                this.onDownloadCallbacks.forEach((callback) => {
                     process.nextTick(() => {
                         callback(err, null);
                     });
@@ -75,7 +75,7 @@ class Video {
             });
             this.yt2mp3.on('finished', (data) => {
                 this.isDownloaded = true;
-                fs.stat(data.file, function (err, stats) {
+                fs.stat(data.file, (err, stats) => {
                     this.size = stats.size;
                 });
                 this.onDownloadCallbacks.forEach((callback) => {
