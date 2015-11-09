@@ -1,5 +1,4 @@
 ﻿"use strict";
-/// <reference path="typings/tsd.d.ts" />
 
 let express = require('express'),
 http = require('http'),
