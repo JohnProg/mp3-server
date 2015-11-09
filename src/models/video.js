@@ -24,8 +24,8 @@ class Video {
         this.isDownloaded = false;
         this.onDownloadCallbacks = [];
         this.yt2mp3 = new ytmp3({
-            "ffmpegPath": __dirname + "/ffmpeg/bin/" + (os.platform() == 'win32' ? "ffmpeg.exe" : "ffmpeg"),             // Where is the FFmpeg binary located?
-            "outputPath": __dirname + "/mp3",                               // Where should the downloaded and encoded files be stored?
+            "ffmpegPath": __dirname + "/../../ffmpeg/bin/" + (os.platform() == 'win32' ? "ffmpeg.exe" : "ffmpeg"),             // Where is the FFmpeg binary located?
+            "outputPath": __dirname + "/../../mp3",                               // Where should the downloaded and encoded files be stored?
             "youtubeVideoQuality": "highest",                               // What video quality should be used?
             "queueParallelism": 4,                                         // How many parallel downloads/encodes should be started?
             "progressTimeout": 4000                                         // How long should be the interval of the progress reports
