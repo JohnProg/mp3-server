@@ -329,7 +329,7 @@ app.get('/download', function(request, response) {
                     else {
                         var fileSize = fileStats.size;
                         var filePath = fileDir + "/" + fileName;
-                        response.set('Content-Type', 'audio/mpeg');
+                        response.set('Content-Type', 'application/octet-stream');
                         response.set('Content-Length', fileSize.toString());
                         response.set('Content-Disposition', 'attachment; filename="' + fileName + '"');
 						response.set('Access-Control-Allow-Origin', "*");
