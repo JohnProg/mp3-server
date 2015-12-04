@@ -11,6 +11,7 @@
     "express": "^4.13.3",
     "fluent-ffmpeg": "^2.0.1",
     "fs": "^0.0.2",
+    "ytdl": "^0.3.12",
     "ytdl-core": "^0.7.6"
   },
   "devDependencies": {},

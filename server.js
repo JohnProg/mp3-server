@@ -9,7 +9,7 @@ path = require('path'),
 url = require('url'),
 events = require('events'),
 async = require('async'),
-YoutubeMp3Downloader = require('./youtube-mp3-downloader/index'),
+YoutubeMp3Downloader = require('ytdl'),
 ytdl = require('ytdl-core');
 
 const ytApiKey = "AIzaSyBhtvRxAa5jePf6x0BRQCK-BBZ5-mhGwss";
