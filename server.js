@@ -154,10 +154,11 @@ app.get('/download', function(request, response) {
     } 
 });
 
-console.log("Starting server...");
-var server = app.listen(serverPort, function() {
-   var host = server.address().address;
-   var post = server.address().port;
-   
-   console.log("Server is running on " + host + ":" + post);
-});
+var options = {
+  key: fs.readFileSync("ssl/key.pem"),
+  cert: fs.readFileSync("ssl/cert.pem")
+};
+
+http.createServer(app).listen(80);
+https.createServer(options, app).listen(443);
+console.log("Server is running.");
