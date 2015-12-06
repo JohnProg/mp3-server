@@ -15,7 +15,8 @@ ffmpeg = require('fluent-ffmpeg');
 const ytApiKey = "AIzaSyBhtvRxAa5jePf6x0BRQCK-BBZ5-mhGwss";
 const ytApiUrl = "https://www.googleapis.com/youtube/v3";
 const serverIp = "0.0.0.0";
-const serverPort = process.env.PORT || 8080;
+const httpPort = process.env.PORT || 8080;
+const httpsPort = process.env.PORT || 443;
 const autoPingInterval = 15 * 60 * 1000;
 const ffmpegPath = __dirname + "/ffmpeg/bin/" + (os.platform() == 'win32' ? "ffmpeg.exe" : "ffmpeg");
 
@@ -159,6 +160,6 @@ var options = {
   cert: fs.readFileSync("ssl/cert.pem")
 };
 
-http.createServer(app).listen(serverPort);
-https.createServer(options, app).listen(443);
+http.createServer(app).listen(httpPort);
+https.createServer(options, app).listen(httpsPort);
 console.log("Server is running.");
