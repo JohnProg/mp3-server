@@ -159,6 +159,6 @@ var options = {
   cert: fs.readFileSync("ssl/cert.pem")
 };
 
-http.createServer(app).listen(80);
+http.createServer(app).listen(serverPort);
 https.createServer(options, app).listen(443);
 console.log("Server is running.");
