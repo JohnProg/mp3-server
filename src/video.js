@@ -5,7 +5,8 @@ module.exports = function(config) {
         events = require('events'),
         eventEmitter = new events.EventEmitter(),
         ytdl = require('ytdl-core'),
-        ffmpeg = require('fluent-ffmpeg');
+        ffmpeg = require('fluent-ffmpeg'),
+        async = require('async');
 
     class Video {
         constructor(videoId) {
@@ -14,32 +15,48 @@ module.exports = function(config) {
             this.info = null;
         }
 
-        getInfo(callback) {
-            var requestUrl = config.ytApiUrl + "/videos?part=snippet"
-                + "&id=" + this.id
-                + "&fields=items(snippet(title))"
-                + "&key=" + config.ytApiKey;
-            https.get(requestUrl, function (searchResponse) {
-                var data = "";
-                searchResponse.on('data', function (dataChunk) {
-                    data += dataChunk;
-                });
-                searchResponse.on('end', function () {
-                    this.info = JSON.parse(data);
-
-                    callback(null, {
-                        title: this.info.items[0].snippet.title
+        getInfo(cb) {
+            async.waterfall([
+                (callback) => {
+                    var requestUrl = config.ytApiUrl + "/videos?part=snippet"
+                        + "&id=" + this.id
+                        + "&fields=items(snippet(title))"
+                        + "&key=" + config.ytApiKey;
+                    https.get(requestUrl, function (res) {
+                        callback(null, res);
+                    }).on('error', function (err) {
+                        callback(err);
                     });
-                });
-            }).on('error', function (err) {
-                callback(err, null);
+                },
+                (res, callback) => {
+                    var data = "";
+                    res.on('data', function (dataChunk) {
+                        data += dataChunk;
+                    });
+                    res.on('end', function () {
+                        this.info = JSON.parse(data);
+                        try {
+                            var title = this.info.items[0].snippet.title;
+                            cb(null, {
+                                title: title
+                            });
+                        }
+                        catch(err) {
+                            callback(new Error('Invalid YouTube video ID.'));
+                        }
+                    });
+                    res.on('clientError', callback);
+                }
+            ], function(err) {
+                cb(err, null);
             });
         }
 
-        download(response) {
+        download(response, callback) {
             this.getInfo((err, videoInfo) => {
                 if (err) {
-                    console.log(err);
+                    eventEmitter.emit('error', err);
+                    eventEmitter.removeAllListeners('error');
                     return;
                 }
                 var readStream = ytdl("http://www.youtube.com/watch?v=" + this.id);
@@ -55,7 +72,7 @@ module.exports = function(config) {
                         eventEmitter.emit('error', err);
                         eventEmitter.removeAllListeners('error');
                     })
-                    .pipe(response);
+                    .pipe(response)
             });
             return eventEmitter;
         }
