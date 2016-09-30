@@ -1,0 +1,13 @@
+{
+    "env": {
+        "NODE_ENV": "development"
+    },
+    "ext": "js json",
+    "watch": [
+        "./"
+    ],
+    "execMap": {
+        "js": "babel-node"
+    },
+    "verbose": true
+}

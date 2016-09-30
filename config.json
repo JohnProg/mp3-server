@@ -1,0 +1,6 @@
+{
+    "PORT": 3000,
+    "PING_INTERVAL": 300000,
+    "YT_API_KEY": "AIzaSyAa5saCs21kGjgyjl2X08cz3kUOn2tb6oI",
+    "YT_API_URI": "https://www.googleapis.com/youtube/v3"
+}
