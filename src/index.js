@@ -8,9 +8,8 @@ import fetch from 'node-fetch'
 import ffmpeg from 'fluent-ffmpeg'
 
 import config from './config.json'
-import api from './src/api'
-import errorHandler from './src/errorHandler'
-import utils from './src/utils'
+import api from './api'
+import utils from './utils'
 
 // Setup server
 let port = process.env.PORT || config.PORT
@@ -18,7 +17,7 @@ const DEBUG = process.env.NODE_ENV === 'development'
 if (DEBUG) {
     require('pretty-error').start()
 }
-const FFMPEG_PATH = path.join(__dirname, '/ffmpeg/bin/', (os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'))
+const FFMPEG_PATH = path.join(__dirname, '../ffmpeg/bin/', (os.platform() === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'))
 
 ffmpeg.setFfmpegPath(FFMPEG_PATH)
 
@@ -26,7 +25,6 @@ var app = express()
 app.set('config', config)
 app.use(morgan(DEBUG ? 'dev' : null))
 app.use('/api', api)
-app.use(errorHandler)
 
 // Start server
 const server = http.createServer(app)
