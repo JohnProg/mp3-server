@@ -24,6 +24,7 @@ ffmpeg.setFfmpegPath(FFMPEG_PATH)
 var app = express()
 app.set('config', config)
 app.use(morgan(DEBUG ? 'dev' : null))
+app.use('/', express.static(path.join(__dirname, '../public')))
 app.use('/api', api)
 
 // Start server
