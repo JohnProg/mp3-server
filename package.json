@@ -17,7 +17,7 @@
     "node": "4.2.1"
   },
   "scripts": {
-    "dev": "nodemon",
+    "dev": "nodemon src/index.js",
     "clean": "rm -rf ./build && mkdir build",
     "build": "npm run clean && babel ./src --out-dir ./build --copy-files",
     "start": "npm run build && node ./build",
