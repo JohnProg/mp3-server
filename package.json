@@ -18,9 +18,9 @@
   },
   "scripts": {
     "dev": "nodemon src/index.js",
-    "clean": "rm -rf ./build && mkdir build",
-    "build": "npm run clean && babel ./src --out-dir ./build --copy-files",
-    "start": "npm run build && node ./build",
+    "build-server": "babel ./src --out-dir ./build --copy-files",
+    "build": "webpack -p --config webpack.production.config.js",
+    "start": "npm run build-server && npm run build && node ./build",
     "lint": "eslint src/*.js"
   },
   "dependencies": {

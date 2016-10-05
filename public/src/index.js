@@ -47,11 +47,6 @@ class App extends React.Component {
                 videos
             })
         })
-
-        let arr = [1, 2, 3, 4]
-        console.log('before', arr)
-        arr.reverse()
-        console.log('after', arr)
     }
 
     formatDate (date) {
