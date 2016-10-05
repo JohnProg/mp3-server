@@ -2,7 +2,9 @@ import fetch from 'node-fetch'
 import ytdl from 'ytdl-core'
 import ffmpeg from 'fluent-ffmpeg'
 
-let config
+import utils from '../utils'
+
+let config, io
 
 export function getVideoInfo (videoId) {
     return fetch(`${config.YT_API_URI}/videos?part=snippet,contentDetails,statistics,status&id=${videoId}&key=${config.YT_API_KEY}`)
@@ -33,6 +35,7 @@ export function downloadVideo (videoId, res) {
 
 export default function (req, res) {
     config = req.app.get('config')
+    io = req.app.get('io')
     let videoId = req.query.v
 
     getVideoInfo(videoId)
@@ -40,13 +43,22 @@ export default function (req, res) {
         if (videoInfo.error) {
             return res.status(500).json(videoInfo.error).end()
         }
-        let title = videoInfo.items[0].snippet.title
+
+        let video = {
+            id: videoInfo.items[0].id,
+            title: videoInfo.items[0].snippet.title,
+            thumbnail: videoInfo.items[0].snippet.thumbnails.default.url
+        }
+        utils.videosList.push(video)
+        io.sockets.emit('download', {
+            video
+        })
 
         res.set('Content-Type', 'audio/mpeg')
-        res.set('Content-Disposition', `attachment; filename="${title}.mp3"`)
+        res.set('Content-Disposition', `attachment; filename="${video.title}.mp3"`)
         res.status(200)
 
-        return downloadVideo(videoId, res)
+        return downloadVideo(video.id, res)
     })
     .catch((e) => {
         console.error(e)

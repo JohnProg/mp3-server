@@ -8,8 +8,14 @@ import fetch from 'node-fetch'
 import ffmpeg from 'fluent-ffmpeg'
 
 import config from './config.json'
+import socket from './socket'
 import api from './api'
 import utils from './utils'
+
+import webpack from 'webpack'
+import webpackDevMiddleware from 'webpack-dev-middleware'
+import webpackHotMiddleware from 'webpack-hot-middleware'
+import webpackConfig from '../webpack.dev.config'
 
 // Setup server
 let port = process.env.PORT || config.PORT
@@ -28,12 +34,26 @@ app.use(morgan(DEBUG ? 'dev' : null))
 // Old API
 app.use('/', api)
 
+// Use webpack middlewares for development
+if (DEBUG) {
+    let compiler = webpack(webpackConfig)
+    app.use(webpackDevMiddleware(compiler, {
+        publicPath: webpackConfig.output.publicPath,
+        noInfo: true,
+        stats: {
+            colors: true
+        }
+    }))
+    app.use(webpackHotMiddleware(compiler, {
+        log: console.log
+    }))
+}
 app.use('/', express.static(path.join(__dirname, '../public')))
 app.use('/api', api)
 
-// Start server
 const server = http.createServer(app)
-server.listen(port)
+let io = socket(server)
+app.set('io', io)
 
 server.on('listening', () => {
     utils.timer.start()
@@ -52,6 +72,9 @@ server.on('listening', () => {
 server.on('error', (err) => {
     console.error(err)
 })
+
+// Start server
+server.listen(port)
 
 function ping () {
     fetch(`http://127.0.0.1:${port}/api/status`)

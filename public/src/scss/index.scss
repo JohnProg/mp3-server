@@ -1,0 +1,153 @@
+html, body {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    background: black;
+    color: #fff;
+    font-family: 'Consolas';
+    position: relative;
+}
+
+#app {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+a {
+    text-decoration: none;
+}
+
+hr {
+    border-style: none;
+
+    margin: 20px 0;
+    display: block;
+    background: #fff;
+    height: 2px;
+}
+
+.center {
+    display: block;
+    margin: 0 auto;
+}
+
+.app-wrapper {
+    position: relative;
+}
+
+.extension-logo {
+    width: 100px;
+    height: 100px;
+    display: block;
+    margin: 0 auto 15px auto;
+    border: 2px solid #fff;
+    transition: transform .4s;
+    position: relative;
+    overflow: hidden;
+    background: #222;
+
+    &::after {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        content: '';
+        width: 100%;
+        height: 100%;
+        background: url('/images/icon-128.png');
+        background-size: cover;
+    }
+}
+
+.btn {
+    border: 2px solid #fff;
+    background: transparent;
+    color: inherit;
+    padding: 5px 15px;
+    transition: background .4s, color .4s;
+    cursor: pointer;
+
+    &:hover {
+        background: #fff;
+        color: #000;
+    }
+}
+
+ul.videos-list {
+    position: relative;
+    overflow: hidden;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    transition: height .4s;
+
+    li {
+        padding: 0;
+        margin: 0;
+    }
+
+    &[data-loading='true'] {
+        height: 0 !important;
+        overflow: visible !important;
+
+        &::after {
+            content: 'loading...';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+    }
+}
+
+.video {
+    cursor: pointer;
+    margin-bottom: 1px;
+
+    a {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        transition: background .4s;
+        padding: 10px 10px;
+
+        &:hover {
+            background: rgba(255, 255, 255, .2);
+        }
+    }
+
+    .video-thumbnail {
+        width: 50px;
+        height: 50px;
+        vertical-align: middle;
+        border: 2px solid #fff;
+    }
+
+    .video-title {
+        margin-left: 10px;
+        position: relative;
+        color: #fff;
+
+        &::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            right: 50%;
+            bottom: -2px;
+            height: 2px;
+            background: #fff;
+            transition: left .4s, right .4s;
+        }
+    }
+
+    &:hover .video-title::after {
+        left: 0;
+        right: 0;
+    }
+}
