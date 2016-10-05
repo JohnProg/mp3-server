@@ -2,9 +2,9 @@
     "env": {
         "NODE_ENV": "development"
     },
-    "ext": "js json",
+    "ext": "js",
     "watch": [
-        "./"
+        "src/"
     ],
     "execMap": {
         "js": "babel-node"
