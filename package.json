@@ -14,7 +14,7 @@
   "homepage": "https://github.com/Lichwa/mp3-server#readme",
   "main": "build/index.js",
   "engines": {
-    "node": "4.2.1"
+    "node": "6.3.0"
   },
   "scripts": {
     "dev": "nodemon src/index.js",
