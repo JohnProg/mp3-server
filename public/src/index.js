@@ -17,7 +17,7 @@ class App extends React.Component {
             videos: []
         }
 
-        this.io = socket('localhost:3000')
+        this.io = socket()
 
         this.io.on('connect', () => {
 
@@ -34,7 +34,6 @@ class App extends React.Component {
         })
 
         this.io.on('videosList', (data) => {
-            console.log(data.videos)
             this.setState({
                 videos: data.videos.length > MAX_VIDEOS ? data.videos.slice(data.videos.length - MAX_VIDEOS, data.videos.length) : data.videos
             })
