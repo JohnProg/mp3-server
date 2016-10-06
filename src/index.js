@@ -12,11 +12,6 @@ import socket from './socket'
 import api from './api'
 import utils from './utils'
 
-import webpack from 'webpack'
-import webpackDevMiddleware from 'webpack-dev-middleware'
-import webpackHotMiddleware from 'webpack-hot-middleware'
-import webpackConfig from '../webpack.dev.config'
-
 // Setup server
 let port = process.env.PORT || config.PORT
 const DEBUG = process.env.NODE_ENV === 'development'
@@ -36,6 +31,10 @@ app.use('/', api)
 
 // Use webpack middlewares for development
 if (DEBUG) {
+    let webpack = require('webpack')
+    let webpackDevMiddleware = require('webpack-dev-middleware')
+    let webpackHotMiddleware = require('webpack-hot-middleware')
+    let webpackConfig = require('../webpack.dev.config')
     let compiler = webpack(webpackConfig)
     app.use(webpackDevMiddleware(compiler, {
         publicPath: webpackConfig.output.publicPath,
